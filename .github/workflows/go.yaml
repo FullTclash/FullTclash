@@ -16,23 +16,40 @@ jobs:
       matrix:
         os: [ubuntu-latest, windows-latest]
         arch: [amd64, arm64]
-        suffix: [.so, .dll] 
     steps:
       - name: Check out code
         uses: actions/checkout@v3
       - name: Set up Go
         uses: actions/setup-go@v4
         with:
-          check-latest: true
+          go-version: 1.20.4
       - name: gomod1
         run: go mod init myclash
       - name: gomod2
         run: go mod tidy
       - name: Build
-        run: go build -buildmode=c-shared -o ./output/fulltclash-${{ matrix.os }}-${{ matrix.arch }}${{ matrix.suffix }} ./libs/fulltclash.go
+        if: ${{ matrix.os == 'ubuntu-latest' }}
+        run: go build -buildmode=c-shared -o ./output/fulltclash-${{ matrix.os }}-${{ matrix.arch }}.so ./libs/fulltclash.go
+      - name: Build
+        if: ${{ matrix.os == 'windows-latest' }}
+        run: go build -buildmode=c-shared -o ./output/fulltclash-${{ matrix.os }}-${{ matrix.arch }}.dll ./libs/fulltclash.go
       - name: Upload artifact
         uses: actions/upload-artifact@v2
         with:
-          name: fulltclash-${{ matrix.os }}-${{ matrix.arch }}${{ matrix.suffix }}
-          path: ./output/*
+          name: fulltclash-${{ matrix.os }}-${{ matrix.arch }}
+          if: ${{ matrix.os == 'ubuntu-latest' }}
+          path: ./output/*.so
           if-no-files-found: error
+      - name: Upload artifact
+        uses: actions/upload-artifact@v2
+        with:
+          name: fulltclash-${{ matrix.os }}-${{ matrix.arch }}
+          if: ${{ matrix.os == 'windows-latest' }}
+          path: ./output/*.dll
+          if-no-files-found: error
+#       - name: Upload artifact
+#         uses: actions/upload-artifact@v2
+#         with:
+#           name: fulltclash-${{ matrix.os }}-${{ matrix.arch }}
+#           path: ./output/*
+#           if-no-files-found: error
